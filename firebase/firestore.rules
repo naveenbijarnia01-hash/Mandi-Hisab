@@ -1,0 +1,75 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(shopId) {
+      return isAuthenticated() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.shopId == shopId;
+    }
+
+    function isSuperAdmin() {
+      return isAuthenticated() &&
+        request.auth.token.admin == true;
+    }
+
+    // User profiles
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // Shops
+    match /shops/{shopId} {
+      allow read: if isOwner(shopId) || isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isOwner(shopId) || isSuperAdmin();
+    }
+
+    // Stock Collection
+    match /stocks/{stockId} {
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.shopId)) || isSuperAdmin();
+      allow create, update: if isAuthenticated() && isOwner(request.resource.data.shopId);
+    }
+
+    // Immutable Transactions Ledger
+    match /transactions/{transactionId} {
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.shopId)) || isSuperAdmin();
+      allow create: if isAuthenticated() && isOwner(request.resource.data.shopId);
+      // Historical transactions can never be directly overwritten or deleted
+      allow update, delete: if false;
+    }
+
+    // Vehicles
+    match /vehicles/{vehicleId} {
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.shopId)) || isSuperAdmin();
+      allow create, update: if isAuthenticated() && isOwner(request.resource.data.shopId);
+    }
+
+    // Parties
+    match /parties/{partyId} {
+      allow read, write: if isAuthenticated() && (resource == null || isOwner(resource.data.shopId)) || isSuperAdmin();
+    }
+
+    // Subscriptions - Read-only for client; write only by backend admin/functions
+    match /subscriptions/{shopId} {
+      allow read: if isOwner(shopId) || isSuperAdmin();
+      allow write: if isSuperAdmin();
+    }
+
+    // Payments
+    match /payments/{paymentId} {
+      allow read: if isAuthenticated() && (resource == null || isOwner(resource.data.shopId)) || isSuperAdmin();
+      allow create: if isAuthenticated();
+      allow update: if isSuperAdmin();
+    }
+
+    // Webhook events - Internal only
+    match /webhookEvents/{eventId} {
+      allow read, write: if false;
+    }
+  }
+}

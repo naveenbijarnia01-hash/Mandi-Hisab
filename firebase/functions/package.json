@@ -1,0 +1,15 @@
+{
+  "name": "mandi-hisab-functions",
+  "description": "Cloud Functions for Mandi Hisab backend and Razorpay webhook verification",
+  "version": "1.0.0",
+  "engines": {
+    "node": "18"
+  },
+  "main": "index.js",
+  "dependencies": {
+    "firebase-admin": "^12.0.0",
+    "firebase-functions": "^5.0.0",
+    "razorpay": "^2.9.2",
+    "crypto": "^1.0.1"
+  }
+}
