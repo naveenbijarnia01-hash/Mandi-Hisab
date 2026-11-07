@@ -9,8 +9,13 @@ pluginManagement {
         if (flutterSdkPath == null) {
             flutterSdkPath = System.getenv("FLUTTER_ROOT")
         }
+        if (flutterSdkPath == null) {
+            flutterSdkPath = "/opt/hostedtoolcache/flutter"
+        }
         return flutterSdkPath
     }()
+
+    includeBuild("$flutterSdkPath/packages/flutter_tools/gradle")
 
     repositories {
         google()
